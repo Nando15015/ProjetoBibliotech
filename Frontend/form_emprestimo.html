@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Empréstimo - BIBLIOTECH</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="config.js"></script>
+</head>
+
+<body>
+    <div class="header">
+        <h1 id="formTitle">Empréstimo</h1>
+        <button class="btnDefault" onclick="window.location.href='listagem_emprestimos.html'"><i class="fa fa-arrow-left"></i></button>
+    </div>
+
+    <form id="emprestimoForm" onsubmit="return saveEmprestimo(event)">
+        <input type="hidden" id="emprestimoId">
+
+        <label for="data_emprestimo">Data do Empréstimo:</label>
+        <input type="date" id="data_emprestimo" name="data_emprestimo" required>
+
+        <!-- <label for="data_devolucao">Data de Devolução:</label>
+        <input type="date" id="data_devolucao" name="data_devolucao"> -->
+
+        <label for="livro">Livro:</label>
+        <select id="livro" name="livro" required>
+            <option value="" disabled selected>Selecione o livro</option>
+            <!-- Opções dinâmicas -->
+        </select>
+
+        <label for="pessoa">Pessoa:</label>
+        <select id="pessoa" name="pessoa" required>
+            <option value="" disabled selected>Selecione a pessoa</option>
+            <!-- Opções dinâmicas -->
+        </select>
+
+        <div class="button-group">
+            <button class="btnDefault" type="submit">CONFIRMAR</button>
+            <button class="btnDefaultCancel" type="button" onclick="window.history.back()">CANCELAR</button>
+        </div>
+    </form>
+
+    <script>
+        async function loadOptions() {
+            let response = await fetch(`${API_URL}/livros`);
+            let livros = await response.json();
+
+            let select = '<option value="">Selecione o livro</option>';
+            livros.forEach(livro => {
+                select += `<option value="${livro.id}">${livro.titulo}</option>`;
+            });
+            document.getElementById('livro').innerHTML = select;
+
+            response = await fetch(`${API_URL}/pessoas`);
+            const pessoas = await response.json();
+            select = '<option value="">Selecione a pessoa</option>';
+            pessoas.forEach(pessoa => {
+                select += `<option value="${pessoa.id}">${pessoa.nome}</option>`;
+            });
+            document.getElementById('pessoa').innerHTML = select;
+        }
+
+        async function saveEmprestimo(event) {
+            event.preventDefault();
+            const id = document.getElementById('emprestimoId').value;
+
+            const emprestimo = {
+                data_emprestimo: document.getElementById('data_emprestimo').value,
+                data_devolucao: null,
+                id_livro: document.getElementById('livro').value,
+                id_pessoa: document.getElementById('pessoa').value
+            };
+
+            if (id) {
+                emprestimo.id = id;
+            }
+
+            const response = await fetch(`${API_URL}/emprestimos`, {
+                method: id ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(emprestimo)
+            });
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sucesso',
+                    text: 'Empréstimo salvo com sucesso!',
+                }).then(() => {
+                    window.location.href = 'listagem_emprestimos.html';
+                });
+            } else {
+                showErrorModal();
+            }
+        }
+
+        async function loadEmprestimo(id) {
+            const response = await fetch(`${API_URL}/emprestimos/${id}`);
+            const emprestimo = await response.json();
+            document.getElementById('emprestimoId').value = emprestimo.id;
+            document.getElementById('data_emprestimo').value = emprestimo.data_emprestimo;
+            document.getElementById('livro').value = emprestimo.id_livro;
+            document.getElementById('pessoa').value = emprestimo.id_pessoa;
+            document.getElementById('formTitle').innerText = 'Empréstimo :: ' + emprestimo.data_emprestimo;
+        }
+
+        function showErrorModal() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: 'Erro ao salvar o empréstimo. Por favor, tente novamente.',
+            });
+        }
+
+        window.onload = async function () {
+            await loadOptions();
+
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (id) {
+                await loadEmprestimo(id);
+            }
+        };
+    </script>
+</body>
+
+</html>

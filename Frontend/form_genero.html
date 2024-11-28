@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Gênero - BIBLIOTECH</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="config.js"></script>
+</head>
+
+<body>
+    <div class="header">
+        <h1 id="formTitle">Gênero</h1>
+        <button class="btnDefault" onclick="window.location.href='listagem_generos.html'"><i class="fa fa-arrow-left"></i></button>
+    </div>
+
+    <form id="generoForm" onsubmit="return saveGenero(event)">
+        <input type="hidden" id="generoId">
+
+        <label for="nome">Nome:</label>
+        <input type="text" id="nome" name="nome" placeholder="Digite o nome do gênero" required>
+
+        <div class="button-group">
+            <button class="btnDefault" type="submit">CONFIRMAR</button>
+            <button class="btnDefaultCancel" type="button" onclick="window.history.back()">CANCELAR</button>
+        </div>
+    </form>
+
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p>Ação realizada com sucesso!</p>
+        </div>
+    </div>
+
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p>Erro ao realizar a ação. Por favor, tente novamente.</p>
+        </div>
+    </div>
+
+    <script>
+        async function saveGenero(event) {
+            event.preventDefault();
+            const id = document.getElementById('generoId').value;
+
+            const genero = {
+                nome: document.getElementById('nome').value
+            };
+
+            if (id) {
+                genero.id = id;
+            }
+
+            const response = await fetch(`${API_URL}/generos`, {
+                method: id ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(genero)
+            });
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sucesso',
+                    text: 'Gênero salvo com sucesso!',
+                }).then(() => {
+                    window.location.href = 'listagem_generos.html';
+                });
+            } else {
+                showErrorModal();
+            }
+        }
+
+        async function loadGenero(id) {
+            const response = await fetch(`${API_URL}/generos/${id}`);
+            const genero = await response.json();
+            document.getElementById('generoId').value = genero.id;
+            document.getElementById('nome').value = genero.nome;
+            document.getElementById('formTitle').innerText = 'Gênero :: ' + genero.nome;
+        }
+
+        function showSuccessModal() {
+            document.getElementById("successModal").style.display = "block";
+        }
+
+        function showErrorModal() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: 'Erro ao salvar o gênero. Por favor, tente novamente.',
+            });
+        }
+
+        window.onload = async function () {
+
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (id) {
+                await loadGenero(id);
+            }
+        };
+    </script>
+</body>
+
+</html>

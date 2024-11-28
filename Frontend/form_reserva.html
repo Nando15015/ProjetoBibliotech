@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Reserva - BIBLIOTECH</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="config.js"></script>
+</head>
+
+<body>
+    <div class="header">
+        <h1 id="formTitle">Reserva</h1>
+        <button class="btnDefault" onclick="window.location.href='listagem_reservas.html'"><i class="fa fa-arrow-left"></i></button>
+    </div>
+
+    <form id="reservaForm" onsubmit="return saveReserva(event)">
+        <input type="hidden" id="reservaId">
+
+        <label for="data_reserva">Data da Reserva:</label>
+        <input type="date" id="data_reserva" name="data_reserva" required>
+
+        <label for="data_validade">Data de Validade:</label>
+        <input type="date" id="data_validade" name="data_validade" required>
+
+        <label for="livro">Livro:</label>
+        <select id="livro" name="livro" required>
+            <option value="" disabled selected>Selecione o livro</option>
+            <!-- Opções dinâmicas -->
+        </select>
+
+        <label for="pessoa">Pessoa:</label>
+        <select id="pessoa" name="pessoa" required>
+            <option value="" disabled selected>Selecione a pessoa</option>
+            <!-- Opções dinâmicas -->
+        </select>
+
+        <div class="button-group">
+            <button class="btnDefault" type="submit"></i> CONFIRMAR</button>
+            <button class="btnDefaultCancel" type="button" onclick="window.history.back()"></i> CANCELAR</button>
+        </div>
+    </form>
+
+    <script>
+        async function loadOptions() {
+            let response = await fetch(`${API_URL}/livros`);
+            let livros = await response.json();
+
+            let select = '<option value="">Selecione o livro</option>';
+            livros.forEach(livro => {
+                select += `<option value="${livro.id}">${livro.titulo}</option>`;
+            });
+            document.getElementById('livro').innerHTML = select;
+
+            response = await fetch(`${API_URL}/pessoas`);
+            const pessoas = await response.json();
+            select = '<option value="">Selecione a pessoa</option>';
+            pessoas.forEach(pessoa => {
+                select += `<option value="${pessoa.id}">${pessoa.nome}</option>`;
+            });
+            document.getElementById('pessoa').innerHTML = select;
+        }
+
+        async function saveReserva(event) {
+            event.preventDefault();
+            const id = document.getElementById('reservaId').value;
+
+            const reserva = {
+                data_reserva: document.getElementById('data_reserva').value,
+                data_validade: document.getElementById('data_validade').value,
+                id_livro: document.getElementById('livro').value,
+                id_pessoa: document.getElementById('pessoa').value
+            };
+
+            if (id) {
+                reserva.id = id;
+            }
+
+            const response = await fetch(`${API_URL}/reservas`, {
+                method: id ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(reserva)
+            });
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sucesso',
+                    text: 'Reserva salva com sucesso!',
+                }).then(() => {
+                    window.location.href = 'listagem_reservas.html';
+                });
+            } else {
+                showErrorModal();
+            }
+        }
+
+        async function loadReserva(id) {
+            const response = await fetch(`${API_URL}/reservas/${id}`);
+            const reserva = await response.json();
+            document.getElementById('reservaId').value = reserva.id;
+            document.getElementById('data_reserva').value = reserva.data_reserva;
+            document.getElementById('data_validade').value = reserva.data_validade;
+            document.getElementById('livro').value = reserva.id_livro;
+            document.getElementById('pessoa').value = reserva.id_pessoa;
+            document.getElementById('formTitle').innerText = 'Reserva :: ' + reserva.data_reserva;
+        }
+
+        function showErrorModal() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: 'Erro ao salvar a reserva. Por favor, tente novamente.',
+            });
+        }
+
+        window.onload = async function () {
+            await loadOptions();
+
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (id) {
+                await loadReserva(id);
+            }
+        };
+    </script>
+</body>
+
+</html>

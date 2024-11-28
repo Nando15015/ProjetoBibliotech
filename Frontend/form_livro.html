@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Livro - BIBLIOTECH</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="config.js"></script>
+</head>
+
+<body>
+    <div class="header">
+        <h1 id="formTitle">Livro</h1>
+        <button class="btnDefault" onclick="window.location.href='listagem_livros.html'"><i
+                class="fa fa-arrow-left"></i></button>
+    </div>
+
+    <form id="livroForm" onsubmit="return saveLivro(event)">
+        <input type="hidden" id="livroId">
+
+        <label for="titulo">Título:</label>
+        <input type="text" id="titulo" name="titulo" placeholder="Digite o título do livro" required>
+
+        <label for="isbn">ISBN:</label>
+        <input type="text" id="isbn" name="isbn" placeholder="Digite o ISBN do livro" required>
+
+        <label for="autor">Autor:</label>
+        <select id="autor" name="autor" required>
+            <option value="" disabled selected>Selecione o autor</option>
+        </select>
+
+        <label for="genero">Gênero:</label>
+        <select id="genero" name="genero" required>
+            <option value="" disabled selected>Selecione o gênero</option>
+        </select>
+
+        <label for="ano_publicacao">Ano de Publicação:</label>
+        <input type="number" id="ano_publicacao" name="ano_publicacao" placeholder="Digite o ano de publicação"
+            required>
+
+        <label for="foto">Foto:</label>
+        <input type="file" id="foto" name="foto" accept="image/*" onchange="convertImageToBase64()" required>
+        <input type="hidden" id="fotoBase64" name="fotoBase64">
+
+        <div class="button-group">
+            <button class="btnDefault" type="submit">CONFIRMAR</button>
+            <button class="btnDefaultCancel" type="button" onclick="window.history.back()">CANCELAR</button>
+        </div>
+    </form>
+
+    <script>
+        async function loadOptions() {
+            let response = await fetch(`${API_URL}/autores`);
+            let autores = await response.json();
+
+            let select = '<option value="">Selecione o autor</option>';
+            autores.forEach(autor => {
+                select += `<option value="${autor.id}">${autor.nome}</option>`;
+            });
+            document.getElementById('autor').innerHTML = select;
+
+            response = await fetch(`${API_URL}/generos`);
+            const generos = await response.json();
+            select = '<option value="">Selecione o gênero</option>';
+            generos.forEach(genero => {
+                select += `<option value="${genero.id}">${genero.nome}</option>`;
+            });
+            document.getElementById('genero').innerHTML = select;
+        }
+
+        async function saveLivro(event) {
+            event.preventDefault();
+            const id = document.getElementById('livroId').value;
+
+            const livro = {
+                titulo: document.getElementById('titulo').value,
+                isbn: document.getElementById('isbn').value,
+                ano_publicacao: document.getElementById('ano_publicacao').value,
+                id_genero: document.getElementById('genero').value,
+                id_autor: document.getElementById('autor').value,
+                foto: document.getElementById('fotoBase64').value
+            };
+
+            if (id) {
+                livro.id = id;
+            }
+
+            const response = await fetch(`${API_URL}/livros`, {
+                method: id ? 'PUT' : 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(livro)
+            });
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Sucesso',
+                    text: 'Livro salvo com sucesso!',
+                }).then(() => {
+                    window.location.href = 'listagem_livros.html';
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Erro',
+                    text: 'Erro ao salvar o livro. Por favor, tente novamente.',
+                });
+            }
+        }
+
+        async function loadLivro(id) {
+            const response = await fetch(`${API_URL}/livros/${id}`);
+            const livro = await response.json();
+
+            document.getElementById('livroId').value = livro.id;
+            document.getElementById('titulo').value = livro.titulo;
+            document.getElementById('isbn').value = livro.isbn;
+            document.getElementById('ano_publicacao').value = livro.ano_publicacao;
+            document.getElementById('autor').value = livro.id_autor;
+            document.getElementById('genero').value = livro.id_genero;
+            document.getElementById('formTitle').innerText = 'Livro :: ' + livro.titulo;
+        }
+
+        function convertImageToBase64() {
+            const fileInput = document.getElementById('foto');
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                document.getElementById('fotoBase64').value = e.target.result;
+            };
+
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+        }
+
+        window.onload = async function () {
+            await loadOptions();
+
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (id) {
+                await loadLivro(id);
+            }
+        };
+    </script>
+</body>
+
+</html>
