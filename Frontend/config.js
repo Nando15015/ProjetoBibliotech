@@ -1,1 +1,1 @@
-const API_URL = 'http://192.168.10.40:8080';
+const API_URL = 'http://localhost:8080';

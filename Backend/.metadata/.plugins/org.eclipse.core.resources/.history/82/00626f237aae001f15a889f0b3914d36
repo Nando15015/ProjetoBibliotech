@@ -1,0 +1,4 @@
+spring.application.name=Bibliotech
+spring.datasource.url=jdbc:mysql://localhost/bibliotechdb
+spring.datasource.username=root
+spring.datasource.password=root
